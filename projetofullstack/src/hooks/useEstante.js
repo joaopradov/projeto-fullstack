@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import { estanteReducer } from "../reducers/estanteReducer";
 import {
   carregarEstante,
@@ -14,7 +14,8 @@ function obterDadosIniciais() {
   } catch {
     return {
       livros: [],
-      erro: "Não foi possível recuperar a estante salva.",
+      erro:
+        "Não foi possível recuperar a estante. A gravação está bloqueada para preservar os dados anteriores.",
     };
   }
 }
@@ -29,38 +30,48 @@ export function useEstante() {
 
   const [erro, setErro] = useState(dadosIniciais.erro);
 
-  useEffect(() => {
-    // Preserva os dados anteriores se a leitura inicial falhar.
+  const estanteAtual = useRef(dadosIniciais.livros);
+
+  function executarAcao(acao) {
+    const proximaEstante = estanteReducer(
+      estanteAtual.current,
+      acao
+    );
+
+    estanteAtual.current = proximaEstante;
+    dispatch(acao);
+
+    // Não sobrescreve dados que não conseguimos recuperar.
     if (dadosIniciais.erro) {
       return;
     }
 
     try {
-      salvarEstante(estante);
+      salvarEstante(proximaEstante);
       setErro("");
     } catch {
       setErro(
         "As alterações estão na tela, mas não puderam ser salvas no navegador."
       );
     }
-  }, [estante, dadosIniciais.erro]);
+  }
 
   function adicionarLivro(livro) {
-    dispatch({
+    executarAcao({
       type: "ADICIONAR_LIVRO",
       livro,
     });
   }
 
   function removerLivro(id) {
-    dispatch({
+    executarAcao({
       type: "REMOVER_LIVRO",
       id,
     });
   }
 
   function alterarStatus(id, status) {
-    dispatch({
+    executarAcao({
       type: "ALTERAR_STATUS",
       id,
       status,

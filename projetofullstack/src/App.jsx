@@ -1,122 +1,99 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Container,
+  Typography,
+} from "@mui/material";
+import BuscaLivros from "./components/BuscaLivros";
+import LivroCard from "./components/LivroCard";
+import Estante from "./components/Estante";
+import { useBuscaLivros } from "./hooks/useBuscaLivros";
+import { useEstante } from "./hooks/useEstante";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const {
+    livros,
+    carregando,
+    erro,
+    buscou,
+    pesquisar,
+  } = useBuscaLivros();
+
+  const {
+    estante,
+    erro: erroEstante,
+    adicionarLivro,
+    removerLivro,
+    alterarStatus,
+  } = useEstante();
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Typography component="h1" variant="h3" gutterBottom>
+        Minha Estante
+      </Typography>
 
-      <div className="ticks"></div>
+      <Typography>
+        Descubra livros e organize suas leituras.
+      </Typography>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <BuscaLivros
+        pesquisar={pesquisar}
+        carregando={carregando}
+      />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {carregando && (
+        <Box role="status" sx={{ my: 3 }}>
+          <CircularProgress size={24} aria-label="Buscando livros" />
+          <Typography>Buscando livros...</Typography>
+        </Box>
+      )}
+
+      {erro && <Alert severity="error">{erro}</Alert>}
+
+      {buscou && livros.length === 0 && (
+        <Alert severity="info">Nenhum livro encontrado.</Alert>
+      )}
+
+      {erroEstante && (
+        <Alert severity="warning" sx={{ my: 2 }}>
+          {erroEstante}
+        </Alert>
+      )}
+
+      <Typography sx={{ my: 2 }}>
+        Livros na sua estante: {estante.length}
+      </Typography>
+
+      <Box
+        component="section"
+        aria-label="Resultados da busca"
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            md: "repeat(3, 1fr)",
+          },
+          gap: 2,
+        }}
+      >
+        {livros.map((livro) => (
+          <LivroCard
+            key={livro.id}
+            livro={livro}
+            adicionarLivro={adicionarLivro}
+            naEstante={estante.some((item) => item.id === livro.id)}
+          />
+        ))}
+      </Box>
+
+      <Estante
+        estante={estante}
+        alterarStatus={alterarStatus}
+        removerLivro={removerLivro}
+      />
+    </Container>
+  );
 }
-
-export default App
